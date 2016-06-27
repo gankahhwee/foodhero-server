@@ -57,7 +57,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
 	extended: true
 }));
-app.use(expressJWT({ secret: 'nyancat forever' }).unless({ path: ["/test"]}));
+app.use(expressJWT({ secret: 'nyancat forever' }).unless({ path: ["/test", "/login"]}));
 // Routes
 
 app.get('/', routes.index);
@@ -85,7 +85,32 @@ app.post('/login', function(req, res) {
 		var username = req.body.username;
 		var password = req.body.password;
 
-			
+		if(!username || !password) {
+			res.send("unauthorized");
+			return;
+		}
+
+		fs.readFile("./secret.txt", function(err, data) {
+			if(err) {
+				return console.log(err);
+			}
+
+			connection.query('SELECT * FROM users WHERE username="'+username +'" AND password="'+password + '"', function(err, rows, fields) {
+				if(err) {
+					return console.log(err);
+				}
+
+				if(data && rows.length!==0) {
+					var token = jwt.sign({username: username}, data);
+					res.status(200).send({token: token});
+					return;
+				} 
+
+				res.send("unauthorized");
+				return console.log("no secret found");
+			});
+	
+		});			
 	});
 });
 
