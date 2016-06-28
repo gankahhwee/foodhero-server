@@ -128,17 +128,19 @@ app.post('/post-events', function(req, res) {
 	var latitude = parseFloat(req.body.latitude);
 	var additionalInfo = req.body.additionalInfo;
 	var foodtype = req.body.foodtype;
+	var location = req.body.location;
 
 	if(!username || !roomname || !endtime || !longitude || !latitude || !foodtype || typeof additionalInfo !== 'undefined' || typeof longitude !== 'number' || typeof latitude !== 'number') {
 		console.log(endtime);
-		connection.query('INSERT INTO food_events (username, roomname, additionalInfo, longitude, latitude, endtime, foodtype) VALUES ("'
+		connection.query('INSERT INTO food_events (username, roomname, additionalInfo, longitude, latitude, endtime, foodtype, location) VALUES ("'
 			+ username + '", "'
 			+ roomname + '", "'
 			+ additionalInfo + '", '
 			+ longitude + ', '
 			+ latitude + ', "'
 			+ endtime + '", "'
-			+ foodtype + '")', function(err, rows, fields) {
+			+ foodtype + '", "'
+			+ location + '")', function(err, rows, fields) {
 				if (err) {
 					res.send("ERROR: mysql insert error: " + err);
 					console.log(err);
@@ -157,6 +159,10 @@ app.post('/post-events', function(req, res) {
 });
 
 app.post('/get-events', function(req, res) {
+	var longitude = req.body.longitude;
+	var latitude = req.body.latitude;
+
+
 	connection.query('SELECT * FROM muc_room', function(err, rows, fields) {
 		console.log(rows);
 	});
