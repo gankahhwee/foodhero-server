@@ -122,7 +122,7 @@ app.post('/login', function(req, res) {
 
 app.post('/post-events', function(req, res) {
 	var username = req.body.username;
-	var roomname = req.body.title;
+	var roomname = req.body.roomname;
 	var endtime =  req.body.endtime;
 	var longitude = parseFloat(req.body.longitude);
 	var latitude = parseFloat(req.body.latitude);
@@ -130,14 +130,15 @@ app.post('/post-events', function(req, res) {
 	var foodtype = req.body.foodtype;
 
 	if(!username || !roomname || !endtime || !longitude || !latitude || !foodtype || typeof additionalInfo !== 'undefined' || typeof longitude !== 'number' || typeof latitude !== 'number') {
+		console.log(endtime);
 		connection.query('INSERT INTO food_events (username, roomname, additionalInfo, longitude, latitude, endtime, foodtype) VALUES ("'
 			+ username + '", "'
 			+ roomname + '", "'
 			+ additionalInfo + '", '
 			+ longitude + ', '
-			+ latitude + ', '
-			+ endtime + ', "'
-			+ foodtype + '"', function(err, rows, fields) {
+			+ latitude + ', "'
+			+ endtime + '", "'
+			+ foodtype + '")', function(err, rows, fields) {
 				if (err) {
 					res.send("ERROR: mysql insert error: " + err);
 					console.log(err);
