@@ -57,7 +57,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
 	extended: true
 }));
-app.use(expressJWT({ secret: 'nyancat forever' }).unless({ path: ["/test", "/login"]}));
+
+fs.readFile("./secret.txt", function(err, data) {
+	if(err) {
+		return console.log(err);
+	}
+	app.use(expressJWT({ secret: data }).unless({ path: ["/test", "/login"]}));
+});
 // Routes
 
 app.get('/', routes.index);
