@@ -101,7 +101,7 @@ app.post('/login', function(req, res) {
 				}
 
 				if(data && rows.length!==0) {
-					var token = jwt.sign({username: username}, data);
+					var token = jwt.sign({username: username}, data, { issuer: "foodhero.me"});
 					res.status(200).send({token: token});
 					return;
 				} 
@@ -112,6 +112,41 @@ app.post('/login', function(req, res) {
 	
 		});			
 	});
+});
+
+app.post('/post-events', function(req, res) {
+	var username = req.body.username;
+	var roomname = req.body.title;
+	var endtime =  req.body.endtime;
+	var longitude = parseFloat(req.body.longitude);
+	var latitude = parseFloat(req.body.latitude);
+	var additionalInfo = req.body.additionalInfo;
+	var foodtype = req.body.foodtype;
+
+	if(!username || !roomname || !endtime || !longitude || !latitude || !foodtype || typeof additionalInfo !== 'undefined' || typeof longitude !== 'number' || typeof latitude !== 'number') {
+		connection.query('INSERT INTO food_events (username, roomname, additionalInfo, longitude, latitude, endtime, foodtype) VALUES ("'
+			+ username + '", "'
+			+ roomname + '", "'
+			+ additionalInfo + '", '
+			+ longitude + ', '
+			+ latitude + ', '
+			+ endtime + ', "'
+			+ foodtype + '"', function(err, rows, fields) {
+				if (err) {
+					res.send("ERROR: mysql insert error: " + err);
+					console.log(err);
+					return;
+				}
+
+				console.log("created");
+				res.send("SUCCESS");
+			});
+
+		return;
+	}
+
+	res.send("ERROR: One of the fields are NULL or wrong data type")
+
 });
 
 app.post('/get-events', function(req, res) {
