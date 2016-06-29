@@ -168,7 +168,7 @@ app.post('/get-events', function(req, res) {
 		+ latitude +') ) * cos( radians( latitude ) )  * cos( radians( longitude ) - radians('
 		+ longitude+') ) + sin( radians('
 		+ latitude+') ) * sin(radians(latitude)) ) ) AS distance from food_events having distance < '
-	    + radius +'order by distance;', function(err, rows, fields) {
+	    + radius +' order by distance;', function(err, rows, fields) {
 		
 			if(err) {
 				res.send("ERROR: mysql get error:" + err);
@@ -177,7 +177,7 @@ app.post('/get-events', function(req, res) {
 			}
 
 			console.log("get-events success");
-			res.send({events: rows});
+			res.json({events: rows});
 	});
 });
 
