@@ -108,7 +108,15 @@ app.post('/login', function(req, res) {
 
 				if(data && rows.length!==0) {
 					var token = jwt.sign({username: username}, data, { issuer: "foodhero.me"});
-					res.status(200).send({token: token});
+
+					connection.query('SELECT COUNT(username) FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
+						connection.query('SELECT COUNT(username) FROM users_muc_room WHERE username="' + username + '"', function(err3, rows3, fields3) {
+							console.log(rows2[0]);
+							console.log(rows3[0]);
+							res.status(200).json({token: token, mealsShared: rows2[0], mealsSaved: rows3[0]});
+						});
+					});
+					
 					return;
 				} 
 
