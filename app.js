@@ -9,7 +9,8 @@ var express = require('express'),
     fs = require('fs'),
     bodyParser = require('body-parser'),
     expressJWT = require('express-jwt'),
-    jwt = require('jsonwebtoken');
+    jwt = require('jsonwebtoken'),
+    multiparty = require('multiparty');
 
 
 //DATABASE CONNECT
@@ -41,7 +42,7 @@ const exec = require('child_process').exec;
 //  app.use(express.bodyParser());
 //  app.use(express.methodOverride());
 //  app.use(app.router);
-//  app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/public'));
 //});
 //
 //app.configure('development', function(){
@@ -139,41 +140,86 @@ app.post('/get-meals', function(req, res){
 });
 
 app.post('/post-events', function(req, res) {
-	var username = req.body.username;
-	var roomname = req.body.roomname;
-	var endtime =  req.body.endtime;
-	var longitude = parseFloat(req.body.longitude);
-	var latitude = parseFloat(req.body.latitude);
-	var additionalInfo = req.body.additionalInfo;
-	var foodtype = req.body.foodtype;
-	var location = req.body.location;
-
-	if(!username || !roomname || !endtime || !longitude || !latitude || !foodtype || typeof additionalInfo !== 'undefined' || typeof longitude !== 'number' || typeof latitude !== 'number') {
-		console.log(endtime);
+	console.log(req.body);
+	var form = new multiparty.Form();
+	
+	form.parse(req, function(err, fields, files){
+		if (err) {
+			console.log('ERROR in form.parse: ' + err.stack);
+			return;
+		}
+		var username = fields["username"][0];
+        	var roomname = fields["roomname"][0];
+ 	        var endtime =  fields["endtime"][0];
+        	var longitude = parseFloat(fields["longitude"][0]);
+  	        var latitude = parseFloat(fields["latitude"][0]);
+        	var additionalInfo = fields["additionalInfo"][0];
+  	        var foodtype = fields["foodtype"][0];
+        	var location = fields["location"][0];
+		var allImages = files["file"];
+		console.log(allImages[0].originalFilename);
+		if(!username || !roomname || !endtime || !longitude || !latitude || !foodtype || typeof additionalInfo !== 'undefined' || typeof longitude !== 'number' || typeof latitude !== 'number') {
+                
 		connection.query('INSERT INTO food_events (username, roomname, additionalInfo, longitude, latitude, endtime, foodtype, location) VALUES ("'
-			+ username + '", "'
-			+ roomname + '", "'
-			+ additionalInfo + '", '
-			+ longitude + ', '
-			+ latitude + ', "'
-			+ endtime + '", "'
-			+ foodtype + '", "'
-			+ location + '")', function(err, rows, fields) {
-				if (err) {
-					res.send("ERROR: mysql insert error: " + err);
-					console.log(err);
-					return;
-				}
-
+                        + username + '", "'
+                        + roomname + '", "'
+                        + additionalInfo + '", '
+                        + longitude + ', '
+                        + latitude + ', "'
+                        + endtime + '", "'
+                        + foodtype + '", "'
+                        + location + '")', function(err, rows, fields) {
+                                if (err) {
+                                        res.send("ERROR: mysql insert error: " + err);
+                                        console.log(err);
+                                        return;
+                                }
+				
+				for (var i = 0; i<allImages.length; i++) {
+					var img = allImages[i];
+					(function(img, i) {
+						var fname = __dirname + "/public/images/";
+						//var writeStream = fs.createWriteStream(fname);
+						//img.pipe(writeStream);
+						fs.readFile(img.path, function(err, data) {
+							if (err) {
+								console.log(err);
+								return;
+							}
+							fs.writeFile(__dirname + "/public/images/" + img.originalFilename, data, function(err) {
+								if(err) {
+									console.log(err);
+									return;
+								}
+								connection.query('INSERT INTO food_events_images(roomname, ord, filename) VALUES("'
+									+ roomname + '", '
+									+ i + ', "'
+									+ img.originalFilename + '")', function(err, rows, fields) {
+									
+									if(err) {
+										console.log(err); return;
+									}
+									console.log("images sql inserted");
+								}); 
+							});
+						});
+					})(img, i);
+				}	
+                                
 				console.log("created");
-				res.send("SUCCESS");
-			});
+                                res.send("SUCCESS");
+                        });
 
-		return;
-	}
+                return;
+	        }
 
-	res.send("ERROR: One of the fields are NULL or wrong data type")
+		
+	});
 
+
+	form.on('error', function(err) {
+		console.log('Error parsing form: ' +err.stack);
+	});
 });
 
 app.post('/get-events', function(req, res) {
