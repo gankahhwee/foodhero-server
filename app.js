@@ -257,7 +257,8 @@ app.post('/get-room-img', function(req, res) {
 		}
 
 		if (rows.length) {
-			fs.readFile(__dirname + "/public/images/" + rows[0], function(err, data) {
+			console.log(rows[0]);
+			fs.readFile(__dirname + "/public/images/" + rows[0].filename, function(err, data) {
 				if(err) {
 					return console.log("read file error");
 				}
