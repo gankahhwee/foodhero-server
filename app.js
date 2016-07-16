@@ -236,8 +236,8 @@ app.post('/get-events', function(req, res) {
 		
 			if(err) {
 				res.send("ERROR: mysql get error:" + err);
-				console.log(err);
-				return;
+				return console.log(err);
+				
 			}
 
 			console.log("get-events success");
@@ -245,8 +245,27 @@ app.post('/get-events', function(req, res) {
 	});
 });
 
-app.post('get-room-number', function(req, res) {
-	var username = req.body.username;
+app.post('/get-room-img', function(req, res) {
+	var order = req.body.order;
+	var roomname = req.body.roomname;
+
+	connection.query('SELECT * FROM food_events_images WHERE ord=' + order + ' AND roomname="' + roomname+'"', function(err, rows, fields){
+		if(err) {
+			res.send("ERROR: mysql get image error:" + err);
+			console.log(err);
+			return;
+		}
+
+		if (rows.length) {
+			fs.readFile(__dirname + "/public/images/" + rows[0], function(err, data) {
+				if(err) {
+					return console.log("read file error");
+				}
+
+				res.json({image: data});
+			});		
+		}
+	}); 
 });
 
 app.post('/register', function(req, res) {
