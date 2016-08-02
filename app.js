@@ -239,10 +239,42 @@ app.post('/get-events', function(req, res) {
 				return console.log(err);
 				
 			}
+			
+	//		for(int i=0; i<rows.length; i++) {
+	//		connection.query('SELECT * FROM food_events_images WHERE ord=' + 0 + ' AND roomname="' + roomname+'"', function(err2, rows2, fields2){
+	//	                if(err2) {
+	//	                        res.send("ERROR: mysql get image error:" + err2);
+	//	                        console.log(err2);
+	//	                        return;
+	//	                }
+	//	
+	//	                if (rows2.length) {
+	//				
+	//	                        res.sendFile(__dirname + "/public/images/" + rows2[0].filename, function(err) {
+	//	                                if(err) console.log(err);
+	//	                        });
+	//	                } else {
+	//				res.json({events: rows});
+	//			}
+	//	        });
+	//		}
 
 			console.log("get-events success");
-			res.json({events: rows});
+			res.json({events:rows});
 	});
+});
+
+app.post('/get-all-images', function(req, res) {
+	var roomname = req.body.roomname;
+	connection.query('SELECT * FROM food_events_images WHERE roomname="' + roomname + '"', function(err, rows, fields) {
+		if(err) {
+			res.send("ERROR");
+			return console.log(err);
+		}
+
+		res.json({imgNames: rows});
+	});
+
 });
 
 app.post('/get-room-img', function(req, res) {
@@ -257,7 +289,11 @@ app.post('/get-room-img', function(req, res) {
 		}
 
 		if (rows.length) {
-			res.sendFile(__dirname + "/public/images/" + rows[0]);	
+			res.sendFile(__dirname + "/public/images/" + rows[0].filename, function(err) {
+				if(err) console.log(err);
+			});	
+		} else {
+			res.send({});
 		}
 	}); 
 });
