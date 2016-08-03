@@ -29,7 +29,8 @@ var connection = mysql.createConnection({
 //	key: fs.readFileSync('www.hayhaytheapp.com.key'),
 //	cert: fs.readFileSync('www.hayhaytheapp.com.chained.crt')
 //}, app);
-var server= require('http').createServer(app);
+var http = require('http');
+var server= http.createServer(app);
 var https = require('https');
 //SHELL SPAWN
 const exec = require('child_process').exec;
@@ -88,25 +89,28 @@ app.get('/test', function(req, res) {
 });
 
 app.post('/loginFB', function(req, res) {
-	var user_id = req.body.user_id;
+	var username = req.body.user_id;
 	var third_party_id = req.body.third_party_id;
 	var token = req.body.token;
-
-	https.get('graph.facebook.com/debug_token?input_token='+token + '&access_token=' + fbAccessToken, function (res){
-		if (parseInt(user_id) === res.data.user_id) {
+	console.log("post login fb");
+	https.get('https://graph.facebook.com/debug_token?input_token='+token + '&access_token=' + fbAccessToken, function(tokenRes) {
+		console.log("verifying access token");
+		tokenRes.on('data', function(data) {
+		var d = JSON.parse(data);
+		if (username === d.data.user_id) {
 			fs.readFile("./secret.txt", function(err, data) {
 				if(err) {
 					return console.log(err);
 				}
 
-				connection.query('SELECT * FROM users WHERE username="'+user_id + '"', function(err, rows, fields) {
+				connection.query('SELECT * FROM users WHERE username="'+username + '"', function(err, rows, fields) {
 					if(err) {
 						return console.log(err);
 					}
 
 					var token = jwt.sign({username: username}, data, { issuer: "foodhero.me"});
 					if(data && rows.length!==0) {
-						
+						console.log("user found");	
 						connection.query('SELECT COUNT(username) AS mealsShared FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
 							connection.query('SELECT COUNT(username) AS mealsSaved FROM users_muc_room WHERE username="' + username + '"', function(err3, rows3, fields3) {
 								res.status(200).json({token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
@@ -117,12 +121,13 @@ app.post('/loginFB', function(req, res) {
 					} 
 
 					else if (data && rows.length === 0) {
-						exec('sudo ~/ejabberd-16.04/bin/ejabberdctl register ' + user_id + " foodhero.me " + third_party_id, function(error, stdout, stderr) {
+						console.log("user not found");
+						exec('sudo ~/ejabberd-16.04/bin/ejabberdctl register ' + username + " foodhero.me " + third_party_id, function(error, stdout, stderr) {
 							if(error) {
 								console.log('exec error: ${error}');
 								return;
 							}
-							
+							console.log("registering");	
 							res.status(200).json({token:token, mealsShared: 0, mealsSaved: 0});
 					
 						});
@@ -136,7 +141,8 @@ app.post('/loginFB', function(req, res) {
 		
 			});	
 		}
-	});
+		});
+	}).on('error', function(e) { console.error(e); });
 });
 
 app.post('/login', function(req, res) {
