@@ -88,59 +88,130 @@ app.get('/test', function(req, res) {
 	});
 });
 
-app.post('/loginFB', function(req, res) {
-	var username = req.body.user_id;
-	var third_party_id = req.body.third_party_id;
-	var token = req.body.token;
-	console.log("post login fb");
-	https.get('https://graph.facebook.com/debug_token?input_token='+token + '&access_token=' + fbAccessToken, function(tokenRes) {
-		console.log("verifying access token");
-		tokenRes.on('data', function(data) {
-		var d = JSON.parse(data);
-		if (username === d.data.user_id) {
-			fs.readFile("./secret.txt", function(err, data) {
-				if(err) {
-					return console.log(err);
-				}
+var changePassword = function(user, pw) {
+	connection.query('UPDATE users SET password="' + pw + '" WHERE username="' + user + '"', function(err, rows, fields) {
+		if(err) {
+			console.log(err);
+		}
+	});
+}
 
-				connection.query('SELECT * FROM users WHERE username="'+username + '"', function(err, rows, fields) {
+app.post('/loginGG', function(req, res) {
+	var username = req.body.email.substr(0, req.body.email.indexOf('@')); 
+	var token = req.body.token;
+	var email = req.body.email;
+	var pw = req.body.access_token;
+
+	https.get('https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=' + token, function(tokenRes) {
+
+		tokenRes.on('data', function(data) {
+			var d = JSON.parse(data);
+			if (email === d.email) {
+				fs.readFile("./secret.txt", function(err, data) {
 					if(err) {
 						return console.log(err);
 					}
 
-					var token = jwt.sign({username: username}, data, { issuer: "foodhero.me"});
-					if(data && rows.length!==0) {
-						console.log("user found");	
-						connection.query('SELECT COUNT(username) AS mealsShared FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
-							connection.query('SELECT COUNT(username) AS mealsSaved FROM users_muc_room WHERE username="' + username + '"', function(err3, rows3, fields3) {
-								res.status(200).json({token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
+					connection.query('SELECT * FROM users WHERE username="'+username + '"', function(err, rows, fields) {
+						if(err) {
+							return console.log(err);
+						}
+
+						var token = jwt.sign({username: username}, data, { issuer: "foodhero.me"});
+						if(data && rows.length!==0) {
+							console.log("user found");	
+							connection.query('SELECT COUNT(username) AS mealsShared FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
+								connection.query('SELECT COUNT(username) AS mealsSaved FROM users_muc_room WHERE username="' + username + '"', function(err3, rows3, fields3) {
+									res.status(200).json({token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
+								});
 							});
-						});
+							
+							changePassword(username, pw);
+							return;
+						} 
+
+						else if (data && rows.length === 0) {
+							console.log("user not found");
+							exec('sudo ~/ejabberd-16.04/bin/ejabberdctl register ' + username + " foodhero.me " + pw, function(error, stdout, stderr) {
+								if(error) {
+									console.log('exec error: ${error}');
+									return;
+								}
+								console.log("registering");	
+								res.status(200).json({token:token, mealsShared: 0, mealsSaved: 0});
 						
-						return;
-					} 
+							});
 
-					else if (data && rows.length === 0) {
-						console.log("user not found");
-						exec('sudo ~/ejabberd-16.04/bin/ejabberdctl register ' + username + " foodhero.me " + third_party_id, function(error, stdout, stderr) {
-							if(error) {
-								console.log('exec error: ${error}');
-								return;
-							}
-							console.log("registering");	
-							res.status(200).json({token:token, mealsShared: 0, mealsSaved: 0});
-					
-						});
+							return;
+						}
 
-						return;
+						res.send("unauthorized");
+						return console.log("no secret found");
+					});
+			
+				});	
+			}
+
+		});
+
+	}).on('error', function(e) { console.error(e); });
+
+});
+
+app.post('/loginFB', function(req, res) {
+	var username = req.body.user_id;
+	var third_party_id = req.body.third_party_id;
+	var token = req.body.token;
+
+	https.get('https://graph.facebook.com/debug_token?input_token='+token + '&access_token=' + fbAccessToken, function(tokenRes) {
+
+		tokenRes.on('data', function(data) {
+			var d = JSON.parse(data);
+			if (username === d.data.user_id) {
+				fs.readFile("./secret.txt", function(err, data) {
+					if(err) {
+						return console.log(err);
 					}
 
-					res.send("unauthorized");
-					return console.log("no secret found");
-				});
-		
-			});	
-		}
+					connection.query('SELECT * FROM users WHERE username="'+username + '"', function(err, rows, fields) {
+						if(err) {
+							return console.log(err);
+						}
+
+						var token = jwt.sign({username: username}, data, { issuer: "foodhero.me"});
+						if(data && rows.length!==0) {
+							console.log("user found");	
+							connection.query('SELECT COUNT(username) AS mealsShared FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
+								connection.query('SELECT COUNT(username) AS mealsSaved FROM users_muc_room WHERE username="' + username + '"', function(err3, rows3, fields3) {
+									res.status(200).json({token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
+								});
+							});
+							
+							changePassword(username, token)
+							return;
+						} 
+
+						else if (data && rows.length === 0) {
+							console.log("user not found");
+							exec('sudo ~/ejabberd-16.04/bin/ejabberdctl register ' + username + " foodhero.me " + token, function(error, stdout, stderr) {
+								if(error) {
+									console.log('exec error: ${error}');
+									return;
+								}
+								console.log("registering");	
+								res.status(200).json({token:token, mealsShared: 0, mealsSaved: 0});
+						
+							});
+
+							return;
+						}
+
+						res.send("unauthorized");
+						return console.log("no secret found");
+					});
+			
+				});	
+			}
 		});
 	}).on('error', function(e) { console.error(e); });
 });
