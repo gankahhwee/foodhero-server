@@ -187,13 +187,13 @@ app.post('/loginFB', function(req, res) {
 								});
 							});
 							
-							changePassword(username, token)
+							changePassword(username, third_party_id);
 							return;
 						} 
 
 						else if (data && rows.length === 0) {
 							console.log("user not found");
-							exec('sudo ~/ejabberd-16.04/bin/ejabberdctl register ' + username + " foodhero.me " + token, function(error, stdout, stderr) {
+							exec('sudo ~/ejabberd-16.04/bin/ejabberdctl register ' + username + " foodhero.me " + third_party_id, function(error, stdout, stderr) {
 								if(error) {
 									console.log('exec error: ${error}');
 									return;
@@ -284,19 +284,25 @@ app.post('/post-events', function(req, res) {
   	        var latitude = parseFloat(fields["latitude"][0]);
         	var additionalInfo = fields["additionalInfo"][0];
   	        var foodtype = fields["foodtype"][0];
+		var servings = fields["servings"][0];
         	var location = fields["location"][0];
+		var contact = fields["contact"][0];
+		var idname = fields["idname"][0];
 		var allImages = files["file"];
-		console.log(allImages[0].originalFilename);
-		if(!username || !roomname || !endtime || !longitude || !latitude || !foodtype || typeof additionalInfo !== 'undefined' || typeof longitude !== 'number' || typeof latitude !== 'number') {
+		
+	if(!username || !roomname || !endtime || !longitude || !latitude || !foodtype || typeof additionalInfo !== 'undefined' || typeof longitude !== 'number' || typeof latitude !== 'number') {
                 
-		connection.query('INSERT INTO food_events (username, roomname, additionalInfo, longitude, latitude, endtime, foodtype, location) VALUES ("'
+		connection.query('INSERT INTO food_events (username, servings, roomname, additionalInfo, longitude, latitude, endtime, foodtype, contact, idname, location) VALUES ("'
                         + username + '", "'
+			+ servings + '", "'
                         + roomname + '", "'
                         + additionalInfo + '", '
                         + longitude + ', '
                         + latitude + ', "'
                         + endtime + '", "'
                         + foodtype + '", "'
+			+ contact + '", "'
+			+ idname + '", "'
                         + location + '")', function(err, rows, fields) {
                                 if (err) {
                                         res.send("ERROR: mysql insert error: " + err);
@@ -304,35 +310,37 @@ app.post('/post-events', function(req, res) {
                                         return;
                                 }
 				
-				for (var i = 0; i<allImages.length; i++) {
-					var img = allImages[i];
-					(function(img, i) {
-						var fname = __dirname + "/public/images/";
-						//var writeStream = fs.createWriteStream(fname);
-						//img.pipe(writeStream);
-						fs.readFile(img.path, function(err, data) {
-							if (err) {
-								console.log(err);
-								return;
-							}
-							fs.writeFile(__dirname + "/public/images/" + img.originalFilename, data, function(err) {
-								if(err) {
+				if(allImages) {
+					for (var i = 0; i<allImages.length; i++) {
+						var img = allImages[i];
+						(function(img, i) {
+							var fname = __dirname + "/public/images/";
+							//var writeStream = fs.createWriteStream(fname);
+							//img.pipe(writeStream);
+							fs.readFile(img.path, function(err, data) {
+								if (err) {
 									console.log(err);
 									return;
 								}
-								connection.query('INSERT INTO food_events_images(roomname, ord, filename) VALUES("'
-									+ roomname + '", '
-									+ i + ', "'
-									+ img.originalFilename + '")', function(err, rows, fields) {
-									
+								fs.writeFile(__dirname + "/public/images/" + img.originalFilename, data, function(err) {
 									if(err) {
-										console.log(err); return;
+										console.log(err);
+										return;
 									}
-									console.log("images sql inserted");
-								}); 
+									connection.query('INSERT INTO food_events_images(roomname, ord, filename) VALUES("'
+										+ roomname + '", '
+										+ i + ', "'
+										+ img.originalFilename + '")', function(err, rows, fields) {
+										
+										if(err) {
+											console.log(err); return;
+										}
+										console.log("images sql inserted");
+									}); 
+								});
 							});
-						});
-					})(img, i);
+						})(img, i);
+					}
 				}	
                                 
 				console.log("created");
