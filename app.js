@@ -373,7 +373,7 @@ app.post('/post-events', function(req, res) {
 					})(img, i);
 				}
 			}	                    
-
+		});
                 return;
 	        }
 
