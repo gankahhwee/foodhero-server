@@ -333,8 +333,12 @@ app.post('/post-events', function(req, res) {
                             return;
                     }
 
-            connection.query('SELECT LAST_INSERT_ID()', function(err, rows, fields) {
-            	console.log(rows);
+            connection.query('SELECT LAST_INSERT_ID() AS id', function(err, rows, fields) {
+            	if(err) {
+            		res.send({success: false});
+            	}
+            	
+            	res.send({success: true , id: rows[0].id});
             });
 				
 			if(allImages) {
