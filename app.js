@@ -260,7 +260,7 @@ app.post('/login', function(req, res) {
 app.post('/going-event', function(req, res) {
 	var username = req.body.username;
 	var event_id = req.body.event_id;
-	var going = req.body.event_id;
+	var going = req.body.going;
 
 	var query;
 
@@ -271,6 +271,7 @@ app.post('/going-event', function(req, res) {
 	} else {
 		query = 'DELETE FROM food_events_attendants WHERE username="' + username + '" AND event_id=' + event_id;
 	}
+
 	connection.query(query, function (err, rows, fields) {
 			if(err) {
 				console.log(err.stack);
