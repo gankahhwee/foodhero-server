@@ -312,65 +312,63 @@ app.post('/post-events', function(req, res) {
 		var servings = fields["servings"][0];
         	var location = fields["location"][0];
 		var contact = fields["contact"][0];
-		var idname = fields["idname"][0];
 		var allImages = files["file"];
 		
 	if(!username || !roomname || !endtime || !longitude || !latitude || !foodtype || typeof additionalInfo !== 'undefined' || typeof longitude !== 'number' || typeof latitude !== 'number') {
                 
-		connection.query('INSERT INTO food_events (username, servings, roomname, additionalInfo, longitude, latitude, endtime, foodtype, contact, idname, location) VALUES ("'
-                        + username + '", "'
+		connection.query('INSERT INTO food_events (username, servings, roomname, additionalInfo, longitude, latitude, endtime, foodtype, contact, location) VALUES ("'
+            + username + '", "'
 			+ servings + '", "'
-                        + roomname + '", "'
-                        + additionalInfo + '", '
-                        + longitude + ', '
-                        + latitude + ', "'
-                        + endtime + '", "'
-                        + foodtype + '", "'
+            + roomname + '", "'
+            + additionalInfo + '", '
+            + longitude + ', '
+            + latitude + ', "'
+            + endtime + '", "'
+            + foodtype + '", "'
 			+ contact + '", "'
-			+ idname + '", "'
-                        + location + '")', function(err, rows, fields) {
-                                if (err) {
-                                        res.send("ERROR: mysql insert error: " + err);
-                                        console.log(err);
-                                        return;
-                                }
+            + location + '")', function(err, rows, fields) {
+                    if (err) {
+                            res.send("ERROR: mysql insert error: " + err);
+                            console.log(err);
+                            return;
+                    }
+
+            connection.query('SELECT LAST_INSERT_ID()', function(err, rows, fields) {
+            	console.log(rows);
+            });
 				
-				if(allImages) {
-					for (var i = 0; i<allImages.length; i++) {
-						var img = allImages[i];
-						(function(img, i) {
-							var fname = __dirname + "/public/images/";
-							//var writeStream = fs.createWriteStream(fname);
-							//img.pipe(writeStream);
-							fs.readFile(img.path, function(err, data) {
-								if (err) {
+			if(allImages) {
+				for (var i = 0; i<allImages.length; i++) {
+					var img = allImages[i];
+					(function(img, i) {
+						var fname = __dirname + "/public/images/";
+						//var writeStream = fs.createWriteStream(fname);
+						//img.pipe(writeStream);
+						fs.readFile(img.path, function(err, data) {
+							if (err) {
+								console.log(err);
+								return;
+							}
+							fs.writeFile(__dirname + "/public/images/" + img.originalFilename, data, function(err) {
+								if(err) {
 									console.log(err);
 									return;
 								}
-								fs.writeFile(__dirname + "/public/images/" + img.originalFilename, data, function(err) {
+								connection.query('INSERT INTO food_events_images(roomname, ord, filename) VALUES("'
+									+ roomname + '", '
+									+ i + ', "'
+									+ img.originalFilename + '")', function(err, rows, fields) {
+									
 									if(err) {
-										console.log(err);
-										return;
+										console.log(err); return;
 									}
-									connection.query('INSERT INTO food_events_images(roomname, ord, filename) VALUES("'
-										+ roomname + '", '
-										+ i + ', "'
-										+ img.originalFilename + '")', function(err, rows, fields) {
-										
-										if(err) {
-											console.log(err); return;
-										}
-										console.log("images sql inserted");
-									}); 
-								});
+									console.log("images sql inserted");
+								}); 
 							});
-						})(img, i);
-					}
-				}	
-                                
-				console.log("created");
-                                res.send("SUCCESS");
-                        });
+						});
+					})(img, i);
+				}
+			}	                    
 
                 return;
 	        }
