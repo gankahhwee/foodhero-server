@@ -333,12 +333,12 @@ app.post('/post-events', function(req, res) {
                             return;
                     }
 
-            connection.query('SELECT LAST_INSERT_ID() AS id', function(err, rows, fields) {
+            connection.query('select auto_increment as id from information_schema.tables where table_name="food_events" and table_schema=DATABASE()', function(err, r, fields) {
             	if(err) {
             		res.send({success: false});
             	}
             	
-            	res.send({success: true , id: rows[0].id});
+            	res.send({success: true , id: r[0].id});
             });
 				
 			if(allImages) {
@@ -353,21 +353,25 @@ app.post('/post-events', function(req, res) {
 								console.log(err);
 								return;
 							}
-							fs.writeFile(__dirname + "/public/images/" + img.originalFilename, data, function(err) {
-								if(err) {
-									console.log(err);
-									return;
-								}
-								connection.query('INSERT INTO food_events_images(roomname, ord, filename) VALUES("'
-									+ roomname + '", '
-									+ i + ', "'
-									+ img.originalFilename + '")', function(err, rows, fields) {
-									
+
+							connection.query('select auto_increment as id from information_schema.tables where table_name="food_events_images" and table_schema=DATABASE()', function(err, r, fields) {
+
+								fs.writeFile(__dirname + "/public/images/" + r[0].id + ".jpg", data, function(err) {
 									if(err) {
-										console.log(err); return;
+										console.log(err);
+										return;
 									}
-									console.log("images sql inserted");
-								}); 
+									connection.query('INSERT INTO food_events_images(roomname, ord, filename) VALUES("'
+										+ roomname + '", '
+										+ i + ', "'
+										+  r[0].id + '.jpg' + '")', function(err, rows, fields) {
+										
+										if(err) {
+											console.log(err); return;
+										}
+										console.log("images sql inserted");
+									}); 
+								});
 							});
 						});
 					})(img, i);
