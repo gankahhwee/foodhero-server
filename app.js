@@ -263,8 +263,7 @@ app.post('/going-event', function(req, res) {
 	var going = req.body.going;
 
 	var query;
-
-	if(going) {
+	if(going == 1) {
 		query = 'INSERT INTO food_events_attendants (username, event_id) VALUES ("'
 		+ username + '", '
 		+ event_id +' )';
