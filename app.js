@@ -409,6 +409,18 @@ app.post('/is-user-going', function(req, res) {
 
 });
 
+app.post('/get-event', function(req, res) {
+	var event_id = req.body.event_id;
+
+	connection.query('SELECT * FROM food_events WHERE id=' + event_id, function(err, rows, fields){
+		if(err || rows.length == 0) {
+			res.send({success: false});
+		} else {
+			res.send({success: true, event: rows[0]});
+		}
+	});
+});
+
 app.post('/get-events', function(req, res) {
 	var longitude = req.body.longitude;
 	var latitude = req.body.latitude;
