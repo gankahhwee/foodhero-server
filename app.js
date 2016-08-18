@@ -389,6 +389,26 @@ app.post('/post-events', function(req, res) {
 	});
 });
 
+app.post('/is-user-going', function(req, res) {
+	var username = req.body.username;
+	var event_id = req.body.event_id;
+
+	var query = 'SELECT * FROM food_events_attendants WHERE username="' + username + '" AND event_id=' + event_id;
+
+	connection.query(query, function(err, rows, fields) {
+		if(err) {
+			res.send({success: false});
+		}
+		else if(rows.length == 0) {
+			res.send({success: true, going: false});
+		} else {
+			res.send({success: true, going: true});
+		}
+
+	});
+
+});
+
 app.post('/get-events', function(req, res) {
 	var longitude = req.body.longitude;
 	var latitude = req.body.latitude;
