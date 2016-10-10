@@ -1,0 +1,7 @@
+{
+  "name": "FoodHero API",
+  "version": "0.1.0",
+  "description": "This website contains all server API",
+  "title": "FoodHero Server API",
+  "url" : "https://api.github.com/v1"
+}

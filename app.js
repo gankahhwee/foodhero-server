@@ -96,6 +96,17 @@ var changePassword = function(user, pw) {
 	});
 }
 
+
+/**
+ * @api {post} /loginGG
+ * @apiName Login Google
+ * @apiGroup Login
+ *
+ * @apiParam {String} username token email
+ * @apiParam {String} password the password for the google login is set as the access token granted by Google 
+ * @apiSuccess {String} jwt auth token
+ * @apiSuccess {Integer} mealsSaved mealsShared 
+ */
 app.post('/loginGG', function(req, res) {
 	var username = req.body.email.substr(0, req.body.email.indexOf('@')); 
 	var token = req.body.token;
@@ -239,7 +250,7 @@ app.post('/login', function(req, res) {
 				if(data && rows.length!==0) {
 					var token = jwt.sign({username: username}, data, { issuer: "foodhero.me"});
 					connection.query('SELECT COUNT(username) AS mealsShared FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
-						connection.query('SELECT COUNT(username) AS mealsSaved FROM users_muc_room WHERE username="' + username + '"', function(err3, rows3, fields3) {
+						connection.query('SELECT COUNT(username) AS mealsSaved FROM food_events_attendants WHERE username="' + username + '"', function(err3, rows3, fields3) {
 							console.log(rows2[0]);
 							console.log(rows3[0]);
 							res.status(200).json({token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
@@ -279,12 +290,13 @@ app.post('/going-event', function(req, res) {
 
 			res.send({success: true});
 		});
+
 });
 
 app.post('/get-meals', function(req, res){
-	var username = req.body.username;
+	var username = req.body.username; console.log(username);
 	connection.query('SELECT COUNT(username) AS mealsShared FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
-		connection.query('SELECT COUNT(username) AS mealsSaved FROM users_muc_room WHERE username="' + username + '"', function(err3, rows3, fields3) {
+		connection.query('SELECT COUNT(username) AS mealsSaved FROM food_events_attendants WHERE username="' + username + '"', function(err3, rows3, fields3) {
 			console.log(rows2[0]);
 			console.log(rows3[0]);
 			res.status(200).json({mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
@@ -430,7 +442,7 @@ app.post('/get-events', function(req, res) {
 	connection.query('SELECT *, ( 6371 * acos( cos( radians('
 		+ latitude +') ) * cos( radians( latitude ) )  * cos( radians( longitude ) - radians('
 		+ longitude+') ) + sin( radians('
-		+ latitude+') ) * sin(radians(latitude)) ) ) AS distance from food_events having distance < '
+		+ latitude+') ) * sin(radians(latitude)) ) ) AS distance from food_events where endtime > now() having distance < '
 	    + radius +' order by distance;', function(err, rows, fields) {
 		
 			if(err) {
@@ -501,6 +513,7 @@ app.post('/register', function(req, res) {
 	var username = req.body.username;
 	var email = req.body.email;
 	var password = req.body.password;
+	console.log("In register");
 	
 	//TODO: Check if this is susceptible to SQL Injection
 	connection.query('SELECT * FROM users WHERE username="'+username+'"', function(err,rows,fields) {
@@ -512,11 +525,11 @@ app.post('/register', function(req, res) {
 				return;
 			}
 			
-			res.send(stdout);
+			res.send({success: 1});
 	
 		});
 	   } else {
-		res.send('Sorry username already exists');
+		res.send({success:0, error: 'Sorry username already exists'});
 	   }
 	});	
 });
