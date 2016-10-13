@@ -64,7 +64,7 @@ fs.readFile("./secret.txt", function(err, data) {
 	if(err) {
 		return console.log(err);
 	}
-	app.use(expressJWT({ secret: data }).unless({ path: ["/test", "/login"]}));
+	app.use(expressJWT({ secret: data }).unless({ path: ["/test", "/login", "/register"]}));
 });
 // Routes
 
@@ -99,13 +99,16 @@ var changePassword = function(user, pw) {
 
 /**
  * @api {post} /loginGG
- * @apiName Login Google
+ * loginGG
+ * @apiName LoginGoogle
  * @apiGroup Login
  *
- * @apiParam {String} username token email
- * @apiParam {String} password the password for the google login is set as the access token granted by Google 
- * @apiSuccess {String} jwt auth token
- * @apiSuccess {Integer} mealsSaved mealsShared 
+ * @apiParam {String} email 
+ * @apiParam {String} token user's authentication id token from Google
+ * @apiParam {String} access_token user's authentication access token from Google
+ * @apiSuccess {String} token jwt auth token
+ * @apiSuccess {Integer} mealsSaved 
+ * @apiSuccess {Integer} mealsShared 
  */
 app.post('/loginGG', function(req, res) {
 	var username = req.body.email.substr(0, req.body.email.indexOf('@')); 
@@ -149,14 +152,14 @@ app.post('/loginGG', function(req, res) {
 									return;
 								}
 								console.log("registering");	
-								res.status(200).json({token:token, mealsShared: 0, mealsSaved: 0});
+								res.status(200).json({success:true, token:token, mealsShared: 0, mealsSaved: 0});
 						
 							});
 
 							return;
 						}
 
-						res.send("unauthorized");
+						res.send({success:false, error:"UNAUTHORIZED"});
 						return console.log("no secret found");
 					});
 			
@@ -169,6 +172,19 @@ app.post('/loginGG', function(req, res) {
 
 });
 
+/**
+ * @api {post} /loginFB
+ * loginFB
+ * @apiName LoginFacebook
+ * @apiGroup Login
+ *
+ * @apiParam {String} user_id user's id from Facebook
+ * @apiParam {String} third_party_id user's third party id from Facebook
+ * @apiParam {String} token user's current access token from Facebook
+ * @apiSuccess {String} token jwt auth token
+ * @apiSuccess {Integer} mealsSaved 
+ * @apiSuccess {Integer} mealsShared 
+ */
 app.post('/loginFB', function(req, res) {
 	var username = req.body.user_id;
 	var third_party_id = req.body.third_party_id;
@@ -194,7 +210,7 @@ app.post('/loginFB', function(req, res) {
 							console.log("user found");	
 							connection.query('SELECT COUNT(username) AS mealsShared FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
 								connection.query('SELECT COUNT(username) AS mealsSaved FROM users_muc_room WHERE username="' + username + '"', function(err3, rows3, fields3) {
-									res.status(200).json({token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
+									res.status(200).json({success:true, token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
 								});
 							});
 							
@@ -210,14 +226,14 @@ app.post('/loginFB', function(req, res) {
 									return;
 								}
 								console.log("registering");	
-								res.status(200).json({token:token, mealsShared: 0, mealsSaved: 0});
+								res.status(200).json({success:true, token:token, mealsShared: 0, mealsSaved: 0});
 						
 							});
 
 							return;
 						}
 
-						res.send("unauthorized");
+						res.send({success:false, error:"UNAUTHORIZED"});
 						return console.log("no secret found");
 					});
 			
@@ -227,6 +243,19 @@ app.post('/loginFB', function(req, res) {
 	}).on('error', function(e) { console.error(e); });
 });
 
+
+/**
+ * @api {post} /login
+ * login
+ * @apiName Login
+ * @apiGroup Login
+ *
+ * @apiParam {String} username
+ * @apiParam {String} password
+ * @apiSuccess {String} token jwt auth token
+ * @apiSuccess {Integer} mealsSaved 
+ * @apiSuccess {Integer} mealsShared 
+ */
 app.post('/login', function(req, res) {
 	// connection.query('SELECT * FROM users', function(err, rows, fields) {
 		var username = req.body.username;
@@ -253,14 +282,14 @@ app.post('/login', function(req, res) {
 						connection.query('SELECT COUNT(username) AS mealsSaved FROM food_events_attendants WHERE username="' + username + '"', function(err3, rows3, fields3) {
 							console.log(rows2[0]);
 							console.log(rows3[0]);
-							res.status(200).json({token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
+							res.status(200).json({success:true, token:token, mealsShared: rows2[0].mealsShared, mealsSaved: rows3[0].mealsSaved});
 						});
 					});
 					
 					return;
 				} 
 
-				res.send("unauthorized");
+				res.send({success:false, error:"UNAUTHORIZED"});
 				return console.log("no secret found");
 			});
 	
@@ -268,6 +297,18 @@ app.post('/login', function(req, res) {
 	// });
 });
 
+
+/**
+ * @api {post} /going-event
+ * going-event
+ * @apiName GoingEvent
+ * @apiGroup Events
+ *
+ * @apiParam {String} username
+ * @apiParam {Integer} going 1 if going and 0 if not
+ * @apiParam {String} event_id
+ * @apiSuccess {Boolean} success
+ */
 app.post('/going-event', function(req, res) {
 	var username = req.body.username;
 	var event_id = req.body.event_id;
@@ -293,6 +334,17 @@ app.post('/going-event', function(req, res) {
 
 });
 
+
+/**
+ * @api {post} /get-meals
+ * get-meals
+ * @apiName GetMeals
+ * @apiGroup User
+ *
+ * @apiParam {String} username
+ * @apiSuccess {Integer} mealsShared
+ * @apiSuccess {Integer} mealsSaved
+ */
 app.post('/get-meals', function(req, res){
 	var username = req.body.username; console.log(username);
 	connection.query('SELECT COUNT(username) AS mealsShared FROM food_events WHERE username="' + username + '"', function(err2, rows2, fields2) {
@@ -304,6 +356,17 @@ app.post('/get-meals', function(req, res){
 	});
 });
 
+
+/**
+ * @api {post} /post-events
+ * post-events
+ * @apiName PostEvents
+ * @apiGroup Events
+ *
+ * @apiParam {String} username
+ * @apiSuccess {Integer} mealsShared
+ * @apiSuccess {Integer} mealsSaved
+ */
 app.post('/post-events', function(req, res) {
 	console.log(req.body);
 	var form = new multiparty.Form();
@@ -401,6 +464,15 @@ app.post('/post-events', function(req, res) {
 	});
 });
 
+/**
+ * @api {post} /is-user-going
+ * is-user-going
+ * @apiName isUserGoingToEvent
+ * @apiGroup Events
+ *
+ * @apiParam {Integer} event_id
+ * @apiSuccess {Boolean} going 
+ */
 app.post('/is-user-going', function(req, res) {
 	var username = req.body.username;
 	var event_id = req.body.event_id;
@@ -421,6 +493,15 @@ app.post('/is-user-going', function(req, res) {
 
 });
 
+/**
+ * @api {post} /get-event
+ * get-event
+ * @apiName GetEventDetails
+ * @apiGroup Events
+ *
+ * @apiParam {String} event_id
+ * @apiSuccess {Json} event the event queried
+ */
 app.post('/get-event', function(req, res) {
 	var event_id = req.body.event_id;
 
@@ -433,6 +514,17 @@ app.post('/get-event', function(req, res) {
 	});
 });
 
+/**
+ * @api {post} /get-events
+ * get-events
+ * @apiName GetEventsWithinLocation
+ * @apiGroup Events
+ *
+ * @apiParam {Integer} longitude user's current longitude
+ * @apiParam {Integer} latitude user's current latitude
+ * @apiParam {Integer} radius the distance radius that is visible in the user's screen
+ * @apiSuccess {Json} events returns all events that are queried
+ */
 app.post('/get-events', function(req, res) {
 	var longitude = req.body.longitude;
 	var latitude = req.body.latitude;
@@ -471,10 +563,19 @@ app.post('/get-events', function(req, res) {
 	//		}
 
 			console.log("get-events success");
-			res.json({events:rows});
+			res.json({success:1, events:rows});
 	});
 });
 
+/**
+ * @api {post} /get-all-images
+ * get-all-images
+ * @apiName GetAllImages
+ * @apiGroup Events
+ *
+ * @apiParam {String} roomname event name
+ * @apiSuccess {Json} imgNames returns all image names stored on the server. To render the images, perform a get request to host/images/imgName
+ */
 app.post('/get-all-images', function(req, res) {
 	var roomname = req.body.roomname;
 	connection.query('SELECT * FROM food_events_images WHERE roomname="' + roomname + '"', function(err, rows, fields) {
@@ -509,6 +610,18 @@ app.post('/get-room-img', function(req, res) {
 	}); 
 });
 
+
+/**
+ * @api {post} /register
+ * register
+ * @apiName Register
+ * @apiGroup User
+ *
+ * @apiParam {String} username
+ * @apiParam {String} email
+ * @apiParam {String} password
+ * @apiSuccess {Integer} success
+ */
 app.post('/register', function(req, res) {
 	var username = req.body.username;
 	var email = req.body.email;
@@ -525,11 +638,12 @@ app.post('/register', function(req, res) {
 				return;
 			}
 			
-			res.send({success: 1});
+			//TODO: RETURN SUCCESS TRUE INSTEAD OF 1
+			res.send({success: true});
 	
 		});
 	   } else {
-		res.send({success:0, error: 'Sorry username already exists'});
+		res.send({success:false, error: 'Sorry username already exists'});
 	   }
 	});	
 });
