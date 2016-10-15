@@ -10,7 +10,11 @@ var express = require('express'),
     bodyParser = require('body-parser'),
     expressJWT = require('express-jwt'),
     jwt = require('jsonwebtoken'),
-    multiparty = require('multiparty');
+    multiparty = require('multiparty'),
+    agent = require('./agent/_header'),
+    device = require('./device');
+
+
 
 var fbAccessToken = "1759718310929584|85b542e45e1043decf73b517c223efb3";
 //DATABASE CONNECT
@@ -412,6 +416,7 @@ app.post('/post-events', function(req, res) {
             		res.send({success: false});
             	}
             	
+		agent.createMessage().device(device).alert(roomname).expires(endtime).send(); 
             	res.send({success: true , id: r[0].id});
             });
 				
