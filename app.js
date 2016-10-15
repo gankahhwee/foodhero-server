@@ -416,34 +416,31 @@ app.post('/post-events', function(req, res) {
             		res.send({success: false});
             	}
             	
-		agent.createMessage().device(device).alert(roomname).expires(endtime).send(); 
-            	res.send({success: true , id: r[0].id});
-            });
-				
-			if(allImages) {
-				for (var i = 0; i<allImages.length; i++) {
-					var img = allImages[i];
-					(function(img, i) {
-						var fname = __dirname + "/public/images/";
-						//var writeStream = fs.createWriteStream(fname);
-						//img.pipe(writeStream);
-						fs.readFile(img.path, function(err, data) {
-							if (err) {
-								console.log(err);
-								return;
-							}
+				agent.createMessage().device(device).alert(roomname).expires(endtime).send(); 
 
-							connection.query('select auto_increment as id from information_schema.tables where table_name="food_events_images" and table_schema=DATABASE()', function(err, r, fields) {
+				if(allImages) {
+					for (var i = 0; i<allImages.length; i++) {
+						var img = allImages[i];
+						(function(img, i) {
+							var fname = __dirname + "/public/images/";
+							//var writeStream = fs.createWriteStream(fname);
+							//img.pipe(writeStream);
+							fs.readFile(img.path, function(err, data) {
+								if (err) {
+									console.log(err);
+									return;
+								}
+
 
 								fs.writeFile(__dirname + "/public/images/" + r[0].id + ".jpg", data, function(err) {
 									if(err) {
 										console.log(err);
 										return;
 									}
-									connection.query('INSERT INTO food_events_images(roomname, ord, filename) VALUES("'
+									connection.query('INSERT INTO food_events_images(roomname, ord, filename, event_id) VALUES("'
 										+ roomname + '", '
 										+ i + ', "'
-										+  r[0].id + '.jpg' + '")', function(err, rows, fields) {
+										+  r[0].id + '.jpg' + '", '+ r[0].id +')', function(err, rows, fields) {
 										
 										if(err) {
 											console.log(err); return;
@@ -452,10 +449,15 @@ app.post('/post-events', function(req, res) {
 									}); 
 								});
 							});
-						});
-					})(img, i);
+						})(img, i);
+					}
 				}
-			}	                    
+
+
+            	res.send({success: true , id: r[0].id});
+            });
+				
+				                    
 		});
                 return;
 	        }
