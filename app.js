@@ -416,7 +416,7 @@ app.post('/post-events', function(req, res) {
             		res.send({success: false});
             	}
             	
-				agent.createMessage().device(device).alert(roomname).expires(endtime).send(); 
+				agent.createMessage().device(device).alert({body: "EVENT@"+location +":" + roomname, 'action-loc-key': "VIEW"}).expires(endtime).send(); 
 
 				if(allImages) {
 					for (var i = 0; i<allImages.length; i++) {
