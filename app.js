@@ -416,7 +416,7 @@ app.post('/post-events', function(req, res) {
             		res.send({success: false});
             	}
             	
-				agent.createMessage().device(device).alert({body: "EVENT@"+location +":" + roomname, 'action-loc-key': "VIEW"}).expires(endtime).send(); 
+				notifyAllDevices(location, roomname, endtime);
 
 				if(allImages) {
 					for (var i = 0; i<allImages.length; i++) {
@@ -654,5 +654,34 @@ app.post('/register', function(req, res) {
 	   }
 	});	
 });
+
+app.post('/register-device-token', function(req, res) {
+	var username = req.body.username;
+	var device_token = req.body.device_token;
+
+	connection.query('INSERT INTO users_device_token (username, device_token) VALUES("' + username + '", "' + device_token + '")', function(err, rows, fields) {
+
+		if(err) {
+			console.log(err);
+			res.send({success:false, error: err.stack});
+			return;
+		}
+
+		res.send({success:true});
+
+	});
+
+});
+
+function notifyAllDevices(location, roomname, endtime) {
+
+	connection.query('SELECT * FROM users_device_token', function(err, rows, fields) {
+		if (rows.length) {
+			for (var i=0; i<rows.length; i++) {
+				agent.createMessage.device(rows[i].device_token).alert({body: "EVENT@"+location +":" + roomname, 'action-loc-key': "VIEW"}).expires(endtime).send(); 
+			}
+		}
+	})
+}
 
 server.listen(8000);
