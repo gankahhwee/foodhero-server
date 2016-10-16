@@ -10,11 +10,18 @@ var express = require('express'),
     bodyParser = require('body-parser'),
     expressJWT = require('express-jwt'),
     jwt = require('jsonwebtoken'),
-    multiparty = require('multiparty'),
-    agent = require('./agent/_header'),
-    device = require('./device');
+    multiparty = require('multiparty');
+    //agent = require('./agent/_header'),
+    //device = require('./device');
 
+var apn = require('apn');
 
+var provider = new apn.Provider({
+  token: {
+    pfx: "'./_cert/oct15.p12'"
+  },
+  production: false,
+});
 
 var fbAccessToken = "1759718310929584|85b542e45e1043decf73b517c223efb3";
 //DATABASE CONNECT
@@ -675,28 +682,53 @@ app.post('/register-device-token', function(req, res) {
 
 function notifyAllDevices(id, username, additionalInfo, longitude, latitude, foodtype, servings, contact, location, roomname, endtime) {
 	
-	var payload = {
-		body: "EVENT@"+location +": " + roomname,
-		id: id,
-		username: username,
-		additionalInfo: additionalInfo,
-		longitude: longitude,
-		latitude: latitude,
-		foodtype: foodtype,
-		servings: servings,
-		contact: contact,
-		location: location,
-		roomname: roomname,
-		endtime: endtime
-	}
+	// var payload = {
+	// 	body: "EVENT@"+location +": " + roomname,
+	// 	id: id,
+	// 	username: username,
+	// 	additionalInfo: additionalInfo,
+	// 	longitude: longitude,
+	// 	latitude: latitude,
+	// 	foodtype: foodtype,
+	// 	servings: servings,
+	// 	contact: contact,
+	// 	location: location,
+	// 	roomname: roomname,
+	// 	endtime: endtime
+	// }
+	var notification = new apn.Notification();
+	notification.body = "EVENT@"+location +": " + roomname;
+	notification.id = id;
+	notification.username = username;
+	notification.additionalInfo = additionalInfo;
+	notification.longitude = longitude;
+	notification.latitude = latitude;
+	notification.foodtype = foodtype;
+	notification.servings = servings;
+	notification.contact = contact;
+	notification.location = ocation;
+	notification.roomname = roomname;
+	notification.endtime = endtime;
 
-	connection.query('SELECT * FROM users_device_token', function(err, rows, fields) {
+	connection.query('SELECT device_token FROM users_device_token', function(err, rows, fields) {
 		if (rows.length) {
-			for (var i=0; i<rows.length; i++) {
-				agent.createMessage().device(rows[i].device_token).alert(payload).expires(endtime).send(); 
-			}
+			console.log(rows);
+			
+			provider.send(notification, rows, function(response) {
+					console.log(response);
+			        // response.sent: Array of device tokens to which the notification was sent succesfully
+			        // response.failed: Array of objects containing the device token (`device`) and either an `error`, or a `status` and `response` from the API
+			});
 		}
 	})
+
+	// connection.query('SELECT * FROM users_device_token', function(err, rows, fields) {
+	// 	if (rows.length) {
+	// 		for (var i=0; i<rows.length; i++) {
+	// 			agent.createMessage().device(rows[i].device_token).alert(payload).expires(endtime).send(); 
+	// 		}
+	// 	}
+	// })
 }
 
 server.listen(8000);
