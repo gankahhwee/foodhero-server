@@ -416,7 +416,7 @@ app.post('/post-events', function(req, res) {
             		res.send({success: false});
             	}
             	
-				notifyAllDevices(location, roomname, endtime);
+				notifyAllDevices(r[0].id, username, additionalInfo, longitude, latitude, foodtype, servings, contact, location, roomname, endtime);
 
 				if(allImages) {
 					for (var i = 0; i<allImages.length; i++) {
@@ -658,8 +658,8 @@ app.post('/register', function(req, res) {
 app.post('/register-device-token', function(req, res) {
 	var username = req.body.username;
 	var device_token = req.body.device_token;
-
-	connection.query('INSERT INTO users_device_token (username, device_token) VALUES("' + username + '", "' + device_token + '")', function(err, rows, fields) {
+	
+	connection.query('INSERT INTO users_device_token (username, device_token) VALUES ("' + username + '", "' + device_token + '")', function(err, rows, fields) {
 
 		if(err) {
 			console.log(err);
@@ -673,12 +673,27 @@ app.post('/register-device-token', function(req, res) {
 
 });
 
-function notifyAllDevices(location, roomname, endtime) {
+function notifyAllDevices(id, username, additionalInfo, longitude, latitude, foodtype, servings, contact, location, roomname, endtime) {
+	
+	var payload = {
+		body: "EVENT@"+location +": " + roomname,
+		id: id,
+		username: username,
+		additionalInfo: additionalInfo,
+		longitude: longitude,
+		latitude: latitude,
+		foodtype: foodtype,
+		servings: servings,
+		contact: contact,
+		location: location,
+		roomname: roomname,
+		endtime: endtime
+	}
 
 	connection.query('SELECT * FROM users_device_token', function(err, rows, fields) {
 		if (rows.length) {
 			for (var i=0; i<rows.length; i++) {
-				agent.createMessage.device(rows[i].device_token).alert({body: "EVENT@"+location +":" + roomname, 'action-loc-key': "VIEW"}).expires(endtime).send(); 
+				agent.createMessage().device(rows[i].device_token).alert(payload).expires(endtime).send(); 
 			}
 		}
 	})
