@@ -439,7 +439,7 @@ app.post('/post-events', function(req, res) {
 								}
 
 
-								fs.writeFile(__dirname + "/public/images/" + r[0].id + ".jpg", data, function(err) {
+								fs.writeFile(__dirname + "/public/images/" + endtime + "-" + i + ".jpg", data, function(err) {
 									if(err) {
 										console.log(err);
 										return;
@@ -447,7 +447,7 @@ app.post('/post-events', function(req, res) {
 									connection.query('INSERT INTO food_events_images(roomname, ord, filename, event_id) VALUES("'
 										+ roomname + '", '
 										+ i + ', "'
-										+  r[0].id + '.jpg' + '", '+ r[0].id +')', function(err, rows, fields) {
+										+  endtime+"-" + i + '.jpg' + '", '+ r[0].id +')', function(err, rows, fields) {
 										
 										if(err) {
 											console.log(err); return;
