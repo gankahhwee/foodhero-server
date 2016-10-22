@@ -418,7 +418,8 @@ app.post('/post-events', function(req, res) {
             	if(err) {
             		res.send({success: false});
             	}
-            			var endtimearr = endtime.split(" ");
+            	var endtimearr = endtime.split(" ");
+            	endtimeOrr = endtime
 				endtime = endtimearr[0] + "T" + endtimearr[1] + ".000Z";	
 				notifyAllDevices(r[0].id, username, additionalInfo, longitude, latitude, foodtype, servings, contact, location, roomname, endtime);
 
@@ -437,7 +438,7 @@ app.post('/post-events', function(req, res) {
 								}
 
 
-								fs.writeFile(__dirname + "/public/images/" + endtime + "-" + i + ".jpg", data, function(err) {
+								fs.writeFile(__dirname + "/public/images/" + endtimeOrr + "-" + i + ".jpg", data, function(err) {
 									if(err) {
 										console.log(err);
 										return;
@@ -445,7 +446,7 @@ app.post('/post-events', function(req, res) {
 									connection.query('INSERT INTO food_events_images(roomname, ord, filename, event_id) VALUES("'
 										+ roomname + '", '
 										+ i + ', "'
-										+  endtime+"-" + i + '.jpg' + '", '+ r[0].id +')', function(err, rows, fields) {
+										+  endtimeOrr+"-" + i + '.jpg' + '", '+ r[0].id +')', function(err, rows, fields) {
 										
 										if(err) {
 											console.log(err); return;
