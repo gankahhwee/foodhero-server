@@ -6,6 +6,6 @@
     "express": "4.13.1",
     "jade": ">= 0.0.1",
     "body-parser": "~1.15.1",
-    "apnagent": "1.0.x"
+    "apn": "2.1.1"
   }
 }

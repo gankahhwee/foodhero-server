@@ -11,15 +11,11 @@ var express = require('express'),
     expressJWT = require('express-jwt'),
     jwt = require('jsonwebtoken'),
     multiparty = require('multiparty');
-    //agent = require('./agent/_header'),
-    //device = require('./device');
 
 var apn = require('apn');
 
 var provider = new apn.Provider({
-  token: {
-    pfx: "'./_cert/oct15.p12'"
-  },
+  pfx: "./_cert/oct15.p12",
   production: false,
 });
 
@@ -422,7 +418,8 @@ app.post('/post-events', function(req, res) {
             	if(err) {
             		res.send({success: false});
             	}
-            	
+            			var endtimearr = endtime.split(" ");
+				endtime = endtimearr[0] + "T" + endtimearr[1] + ".000Z";	
 				notifyAllDevices(r[0].id, username, additionalInfo, longitude, latitude, foodtype, servings, contact, location, roomname, endtime);
 
 				if(allImages) {
@@ -432,6 +429,7 @@ app.post('/post-events', function(req, res) {
 							var fname = __dirname + "/public/images/";
 							//var writeStream = fs.createWriteStream(fname);
 							//img.pipe(writeStream);
+							console.log(img.path);
 							fs.readFile(img.path, function(err, data) {
 								if (err) {
 									console.log(err);
@@ -682,53 +680,31 @@ app.post('/register-device-token', function(req, res) {
 
 function notifyAllDevices(id, username, additionalInfo, longitude, latitude, foodtype, servings, contact, location, roomname, endtime) {
 	
-	// var payload = {
-	// 	body: "EVENT@"+location +": " + roomname,
-	// 	id: id,
-	// 	username: username,
-	// 	additionalInfo: additionalInfo,
-	// 	longitude: longitude,
-	// 	latitude: latitude,
-	// 	foodtype: foodtype,
-	// 	servings: servings,
-	// 	contact: contact,
-	// 	location: location,
-	// 	roomname: roomname,
-	// 	endtime: endtime
-	// }
-	var notification = new apn.Notification();
-	notification.body = "EVENT@"+location +": " + roomname;
-	notification.id = id;
-	notification.username = username;
-	notification.additionalInfo = additionalInfo;
-	notification.longitude = longitude;
-	notification.latitude = latitude;
-	notification.foodtype = foodtype;
-	notification.servings = servings;
-	notification.contact = contact;
-	notification.location = ocation;
-	notification.roomname = roomname;
-	notification.endtime = endtime;
+	 var payload = {
+	 	body: "EVENT@"+location +": " + roomname,
+	 	id: id,
+	 	username: username,
+	 	additionalInfo: additionalInfo,
+	 	longitude: longitude,
+	 	latitude: latitude,
+	 	foodtype: foodtype,
+	 	servings: servings,
+	 	contact: contact,
+	 	location: location,
+	 	roomname: roomname,
+	 	endtime: endtime
+	 }
+	var notification = new apn.Notification({body: "EVENT@" + location + ": " + roomname, sound:"chime.caf", topic:"lacie.FoodHero", payload: payload});
 
 	connection.query('SELECT device_token FROM users_device_token', function(err, rows, fields) {
 		if (rows.length) {
+			rows = rows.map(function(a) {return a.device_token;});
 			console.log(rows);
 			
-			provider.send(notification, rows, function(response) {
-					console.log(response);
+			provider.send(notification, rows).then((response) => {console.log(response.failed);});
 			        // response.sent: Array of device tokens to which the notification was sent succesfully
 			        // response.failed: Array of objects containing the device token (`device`) and either an `error`, or a `status` and `response` from the API
-			});
 		}
-	})
-
-	// connection.query('SELECT * FROM users_device_token', function(err, rows, fields) {
-	// 	if (rows.length) {
-	// 		for (var i=0; i<rows.length; i++) {
-	// 			agent.createMessage().device(rows[i].device_token).alert(payload).expires(endtime).send(); 
-	// 		}
-	// 	}
-	// })
+	});
 }
-
 server.listen(8000);
