@@ -430,7 +430,7 @@ app.post('/post-events', function(req, res) {
 							var fname = __dirname + "/public/images/";
 							//var writeStream = fs.createWriteStream(fname);
 							//img.pipe(writeStream);
-							console.log(img.path);
+							console.log(r[0].id);
 							fs.readFile(img.path, function(err, data) {
 								if (err) {
 									console.log(err);
@@ -446,7 +446,7 @@ app.post('/post-events', function(req, res) {
 									connection.query('INSERT INTO food_events_images(roomname, ord, filename, event_id) VALUES("'
 										+ roomname + '", '
 										+ i + ', "'
-										+  endtimeOrr+"-" + i + '.jpg' + '", '+ r[0].id +')', function(err, rows, fields) {
+										+  endtimeOrr +"-" + r[0].id + '.jpg' + '", '+ r[0].id +')', function(err, rows, fields) {
 										
 										if(err) {
 											console.log(err); return;
