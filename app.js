@@ -414,7 +414,7 @@ app.post('/post-events', function(req, res) {
                             return;
                     }
 
-            connection.query('select auto_increment as id from information_schema.tables where table_name="food_events" and table_schema=DATABASE()', function(err, r, fields) {
+            connection.query('select max(id) as id from food_events', function(err, r, fields) {
             	if(err) {
             		res.send({success: false});
             	}
